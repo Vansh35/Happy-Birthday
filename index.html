@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>The Universe Had No Choice — Happy Birthday, Kamya</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; background: #02030a; overflow: hidden; font-family: 'Cinematic Body', -apple-system, 'Segoe UI', sans-serif; }
+  #app { position: relative; width: 100vw; height: 100vh; height: 100dvh; overflow: hidden; background: #02030a; }
+  canvas#starfield { position: absolute; inset: 0; display: block; }
+  .display-type { font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'URW Palladio L', Georgia, serif; font-weight: 400; letter-spacing: 0.04em; color: #f3ede1; }
+  .chrome-type { font-family: -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; }
+  #textLayer { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; pointer-events: none; padding: 0 6vw; z-index: 5; }
+  .title-card { font-size: clamp(22px, 4.6vw, 52px); line-height: 1.35; opacity: 0; color: #f3ede1; text-shadow: 0 0 28px rgba(255, 244, 214, 0.18), 0 0 2px rgba(255,255,255,0.25); max-width: 880px; will-change: opacity, transform; }
+  .title-card.sub { font-size: clamp(15px, 2vw, 22px); letter-spacing: 0.08em; color: #cbb892; margin-top: 18px; font-style: italic; }
+  .title-card.glow-name { color: #ffe9b8; text-shadow: 0 0 40px rgba(255, 214, 130, 0.55), 0 0 4px rgba(255,255,255,0.4); }
+  .fade-el { transition: opacity 1.4s ease, transform 1.4s ease; transform: translateY(8px); }
+  .fade-el.in { opacity: 1; transform: translateY(0); }
+  .fade-el.out { opacity: 0; transform: translateY(-8px); }
+  #startScreen { position: absolute; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #02030a; cursor: pointer; transition: opacity 1.2s ease; }
+  #startScreen.hidden { opacity: 0; pointer-events: none; }
+  #startScreen .eyebrow { font-size: 11px; color: #8d7e5e; margin-bottom: 22px; opacity: 0.85; }
+  #startScreen h1 { font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif; font-weight: 400; font-size: clamp(28px, 6vw, 56px); color: #f3ede1; letter-spacing: 0.03em; text-align: center; max-width: 90vw; text-shadow: 0 0 30px rgba(255, 244, 214, 0.15); }
+  #startScreen .start-btn { margin-top: 48px; font-size: 12px; color: #02030a; background: #f3ede1; border: none; padding: 14px 38px; border-radius: 999px; letter-spacing: 0.18em; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease; box-shadow: 0 0 0 rgba(243,237,225,0); }
+  #startScreen .start-btn:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 8px 30px rgba(243, 237, 225, 0.25); background: #fff8ea; }
+  #uiChrome { position: absolute; bottom: 22px; left: 0; right: 0; display: flex; justify-content: center; gap: 28px; z-index: 40; opacity: 0; transition: opacity 1s ease; pointer-events: none; }
+  #uiChrome.visible { opacity: 0.55; }
+  #uiChrome span { font-size: 10px; color: #cbb892; letter-spacing: 0.16em; }
+  #uiChrome kbd { display: inline-block; border: 1px solid rgba(203, 184, 146, 0.4); border-radius: 4px; padding: 1px 6px; margin-right: 6px; font-family: inherit; font-size: 9px; }
+  #sceneDots { position: absolute; top: 22px; left: 0; right: 0; display: flex; justify-content: center; gap: 9px; z-index: 40; opacity: 0; transition: opacity 1s ease; }
+  #sceneDots.visible { opacity: 0.9; }
+  #sceneDots .dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(243, 237, 225, 0.25); transition: background 0.5s ease, transform 0.5s ease; }
+  #sceneDots .dot.active { background: #f3ede1; transform: scale(1.6); }
+  #blackout { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 60; transition: opacity 1.8s ease; }
+  #blackout.on { opacity: 1; }
+  #soundToggle { position: absolute; top: 22px; right: 22px; z-index: 45; width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(243, 237, 225, 0.25); background: rgba(255,255,255,0.03); color: #cbb892; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; opacity: 0; transition: opacity 1s ease, border-color 0.3s ease; }
+  #soundToggle.visible { opacity: 0.7; }
+  #soundToggle:hover { opacity: 1; border-color: rgba(243,237,225,0.6); }
+  @media (max-width: 600px) { #uiChrome { gap: 16px; } #uiChrome span { font-size: 9px; } }
+  @media (prefers-reduced-motion: reduce) { .fade-el, #blackout, #startScreen, #uiChrome, #sceneDots, .start-btn { transition-duration: 0.4s !important; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="starfield"></canvas>
+  <div id="sceneDots"></div>
+  <div id="textLayer"></div>
+  <button id="soundToggle" title="Toggle sound" aria-label="Toggle ambient sound">♪</button>
+  <div id="uiChrome">
+    <span><kbd>Space</kbd>Skip</span>
+    <span><kbd>R</kbd>Restart</span>
+  </div>
+  <div id="blackout"></div>
+  <div id="startScreen">
+    <div class="eyebrow chrome-type">A SHORT FILM FOR</div>
+    <h1>The Universe Had No Choice</h1>
+    <button class="start-btn chrome-type">Click to Begin</button>
+  </div>
+</div>
+<script>
+(function () {
+  'use strict';
+  const RECIPIENT_NAME = "Kamya";
+  const SCENES = [
+    { id: 1, start: 0,  end: 5  },
+    { id: 2, start: 5,  end: 10 },
+    { id: 3, start: 10, end: 18 },
+    { id: 4, start: 18, end: 25 },
+    { id: 5, start: 25, end: 32 },
+    { id: 6, start: 32, end: 40 },
+  ];
+  const TOTAL_DURATION = SCENES[SCENES.length - 1].end;
+  const state = { started: false, playing: false, startTime: 0, pausedAt: 0, elapsed: 0, currentScene: 0, lastSceneRendered: -1, width: 0, height: 0, dpr: Math.min(window.devicePixelRatio || 1, 2), reducedMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches };
+  const canvas = document.getElementById('starfield');
+  const ctx = canvas.getContext('2d');
+  function resize() {
+    state.width = window.innerWidth; state.height = window.innerHeight;
+    state.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = state.width * state.dpr; canvas.height = state.height * state.dpr;
+    canvas.style.width = state.width + 'px'; canvas.style.height = state.height + 'px';
+    ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+    if (!state.width || !state.height) { requestAnimationFrame(resize); return; }
+    buildTextPointsCache(); buildConstellationPoints();
+  }
+  window.addEventListener('resize', resize);
+  const STAR_COUNT_BASE = 2200;
+  class Star {
+    constructor(i) {
+      this.i = i; this.reset(true);
+      this.targetIndex = -1; this.mode = 'ambient';
+      this.tx = 0; this.ty = 0; this.cx = 0; this.cy = 0;
+      this.vx = (Math.random() - 0.5) * 0.04; this.vy = (Math.random() - 0.5) * 0.04;
+    }
+    reset(initial) {
+      this.x = Math.random() * state.width; this.y = Math.random() * state.height;
+      this.cx = this.x; this.cy = this.y; this.z = Math.random();
+      this.baseRadius = 0.4 + this.z * 1.6; this.twinkleSpeed = 0.5 + Math.random() * 1.5;
+      this.twinklePhase = Math.random() * Math.PI * 2; this.hue = Math.random() < 0.82 ? 'warm' : 'cool';
+      this.brightBoost = 0;
+      if (!initial) { this.vx = (Math.random() - 0.5) * 0.04; this.vy = (Math.random() - 0.5) * 0.04; }
+    }
+    colorString(alpha) {
+      if (this.hue === 'warm') return `rgba(255, ${230 + Math.floor(this.brightBoost * 10)}, ${200 - Math.floor(this.z * 30)}, ${alpha})`;
+      return `rgba(214, 224, 255, ${alpha})`;
+    }
+  }
+  let stars = [];
+  function initStars() {
+    const area = window.innerWidth * window.innerHeight;
+    const density = Math.min(1.6, Math.max(0.6, area / (1280 * 800)));
+    const count = Math.round(STAR_COUNT_BASE * density);
+    stars = new Array(count);
+    for (let i = 0; i < count; i++) stars[i] = new Star(i);
+  }
+  let shootingStars = []; let nextShootingStarAt = 4 + Math.random() * 6;
+  function maybeSpawnShootingStar(elapsed) {
+    if (elapsed < nextShootingStarAt) return;
+    nextShootingStarAt = elapsed + 5 + Math.random() * 7;
+    const fromLeft = Math.random() < 0.5; const y0 = Math.random() * state.height * 0.5;
+    shootingStars.push({ x: fromLeft ? -50 : state.width + 50, y: y0, vx: (fromLeft ? 1 : -1) * (6 + Math.random() * 4), vy: 2 + Math.random() * 1.5, life: 1, length: 90 + Math.random() * 60 });
+  }
+  function updateShootingStars(dt) {
+    for (let i = shootingStars.length - 1; i >= 0; i--) {
+      const s = shootingStars[i];
+      s.x += s.vx * dt * 60; s.y += s.vy * dt * 60; s.life -= dt * 0.6;
+      if (s.life <= 0 || s.x < -200 || s.x > state.width + 200) shootingStars.splice(i, 1);
+    }
+  }
+  function drawShootingStars() {
+    for (const s of shootingStars) {
+      const angle = Math.atan2(s.vy, s.vx);
+      const tailX = s.x - Math.cos(angle) * s.length; const tailY = s.y - Math.sin(angle) * s.length;
+      const grad = ctx.createLinearGradient(s.x, s.y, tailX, tailY);
+      grad.addColorStop(0, `rgba(255,250,235,${Math.max(0, s.life)})`); grad.addColorStop(1, 'rgba(255,250,235,0)');
+      ctx.strokeStyle = grad; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(tailX, tailY); ctx.stroke();
+    }
+  }
+  function samplePointsFromText(lines) {
+    if (!state.width || !state.height) return [];
+    const off = document.createElement('canvas');
+    const w = Math.max(1, Math.min(state.width, 1400)); const h = Math.max(1, state.height);
+    off.width = w; off.height = h;
+    const octx = off.getContext('2d');
+    octx.clearRect(0, 0, w, h); octx.fillStyle = '#fff';
+    octx.textAlign = 'center'; octx.textBaseline = 'middle';
+    lines.forEach((line) => {
+      octx.font = `${line.weight || 400} ${line.size}px ${line.font || "'Iowan Old Style', Georgia, serif"}`;
+      octx.fillText(line.text, w / 2, line.y);
+    });
+    const step = Math.max(2, Math.floor(w / 380));
+    const imgData = octx.getImageData(0, 0, w, h).data;
+    const points = [];
+    for (let y = 0; y < h; y += step) {
+      for (let x = 0; x < w; x += step) {
+        const idx = (y * w + x) * 4 + 3;
+        if (imgData[idx] > 80) { const offsetX = (state.width - w) / 2; points.push({ x: x + offsetX, y: y }); }
+      }
+    }
+    return points;
+  }
+  let textPointsCache = { happyBirthday: [] };
+  function buildTextPointsCache() {
+    const isSmall = state.width < 640;
+    const titleSize = Math.max(34, Math.min(state.width * 0.105, 110));
+    const nameSize = Math.max(22, Math.min(state.width * 0.075, 78));
+    const midY = state.height * 0.46; const gap = titleSize * (isSmall ? 1.05 : 0.95);
+    textPointsCache.happyBirthday = samplePointsFromText([
+      { text: 'HAPPY BIRTHDAY', size: titleSize, y: midY - gap * 0.05, weight: 600 },
+      { text: RECIPIENT_NAME.toUpperCase(), size: nameSize, y: midY + gap * 0.85, weight: 500, font: "'Iowan Old Style', Georgia, serif" },
+    ]);
+  }
+  let constellationPoints = []; let constellationEdges = [];
+  function buildConstellationPoints() {
+    const cx = state.width / 2; const cy = state.height * 0.46;
+    const scale = Math.min(state.width, state.height) * 0.22;
+    const shape = [[-1.0,0.1],[-0.55,-0.35],[-0.15,-0.05],[0,-0.5],[0.15,-0.05],[0.55,-0.35],[1.0,0.1],[0.45,0.25],[0.6,0.7],[0,0.35],[-0.6,0.7],[-0.45,0.25]];
+    constellationPoints = shape.map(([nx, ny]) => ({ x: cx + nx * scale, y: cy + ny * scale }));
+    constellationEdges = [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,11],[11,0],[2,9],[4,9]];
+  }
+  const textLayer = document.getElementById('textLayer');
+  const sceneDots = document.getElementById('sceneDots');
+  const uiChrome = document.getElementById('uiChrome');
+  const blackout = document.getElementById('blackout');
+  const startScreen = document.getElementById('startScreen');
+  const soundToggle = document.getElementById('soundToggle');
+  SCENES.forEach((s) => { const d = document.createElement('div'); d.className = 'dot'; d.dataset.scene = s.id; sceneDots.appendChild(d); });
+  function setActiveDot(sceneId) { sceneDots.querySelectorAll('.dot').forEach((d) => { d.classList.toggle('active', Number(d.dataset.scene) === sceneId); }); }
+  function makeCard(html, extraClass) {
+    const el = document.createElement('div');
+    el.className = 'title-card display-type fade-el' + (extraClass ? ' ' + extraClass : '');
+    el.innerHTML = html; return el;
+  }
+  let activeCueTimers = [];
+  function clearTextLayer() { textLayer.innerHTML = ''; activeCueTimers.forEach(t => clearTimeout(t)); activeCueTimers = []; }
+  function scheduleFade(el, inDelayMs, holdMs, outDelayMs) {
+    textLayer.appendChild(el);
+    const t1 = setTimeout(() => el.classList.add('in'), Math.max(0, inDelayMs));
+    activeCueTimers.push(t1);
+    if (outDelayMs != null) {
+      const t2 = setTimeout(() => { el.classList.remove('in'); el.classList.add('out'); }, Math.max(0, inDelayMs + holdMs));
+      activeCueTimers.push(t2);
+    }
+    return el;
+  }
+  function enterScene1() {
+    clearTextLayer();
+    const line1 = makeCard('The universe was peaceful.'); const line2 = makeCard('Everything was perfectly balanced.');
+    scheduleFade(line1, 600, 1700, 1800); scheduleFade(line2, 2600, 1700, 1800);
+  }
+  function enterScene2() {
+    clearTextLayer();
+    const then = makeCard('Then&hellip;'); const born = makeCard(`<span class="glow-name">${RECIPIENT_NAME}</span> was born.`);
+    const drama = makeCard('Dramatic consequences followed.', 'sub');
+    scheduleFade(then, 300, 1100, 1000); scheduleFade(born, 1700, 1500, 1000); scheduleFade(drama, 3500, 1300, 1300);
+    triggerHerStarBrighten();
+  }
+  function enterScene3() {
+    clearTextLayer();
+    const investigating = makeCard('Scientists are still investigating the consequences.');
+    scheduleFade(investigating, 400, 3400, 1200);
+    beginChaosSwirl(); setTimeout(() => beginTextAssembly(), 5200);
+  }
+  function enterScene4() {
+    clearTextLayer();
+    const older = makeCard('Another year older.', 'sub'); const wiser = makeCard('Somehow not another year wiser.', 'sub');
+    scheduleFade(older, 500, 2300, 1200); scheduleFade(wiser, 2400, 3000, 1600);
+    triggerTextSparkle();
+  }
+  function enterScene5() {
+    clearTextLayer(); beginTextDissolve();
+    const evidence = makeCard('But despite all available evidence&hellip;'); const awesome = makeCard("You're still pretty awesome.", 'glow-name');
+    scheduleFade(evidence, 1800, 2200, 1200); scheduleFade(awesome, 4200, 2400, null);
+    beginConstellationForm();
+  }
+  function enterScene6() {
+    clearTextLayer();
+    const happy = makeCard(`Happy Birthday, <span class="glow-name">${RECIPIENT_NAME}</span>.`);
+    scheduleFade(happy, 600, 4900, 1500);
+    setTimeout(() => blackout.classList.add('on'), 6600);
+  }
+  const SCENE_ENTER_FNS = { 1: enterScene1, 2: enterScene2, 3: enterScene3, 4: enterScene4, 5: enterScene5, 6: enterScene6 };
+  function sceneIndexForTime(t) { for (let i = SCENES.length - 1; i >= 0; i--) { if (t >= SCENES[i].start) return i; } return 0; }
+  let starMotionMode = 'calm'; let herStarIndex = -1; let rippleActive = null; let zoomFactor = 1; let zoomTarget = 1;
+  function triggerHerStarBrighten() {
+    if (herStarIndex === -1 && stars.length) {
+      let best = 0, bestDist = Infinity; const cx = state.width / 2, cy = state.height / 2;
+      for (let i = 0; i < stars.length; i++) { const d = Math.hypot(stars[i].x - cx, stars[i].y - cy); if (d < bestDist) { bestDist = d; best = i; } }
+      herStarIndex = best;
+    }
+    zoomTarget = 1.12;
+    setTimeout(() => { if (herStarIndex >= 0) rippleActive = { startTime: state.elapsed, x: stars[herStarIndex].x, y: stars[herStarIndex].y }; }, 3300);
+  }
+  function beginChaosSwirl() { starMotionMode = 'chaos'; zoomTarget = 1; }
+  function beginTextAssembly() {
+    if (!textPointsCache.happyBirthday.length) buildTextPointsCache();
+    const points = textPointsCache.happyBirthday; const n = Math.min(points.length, stars.length);
+    const order = [...Array(stars.length).keys()];
+    for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+    for (let i = 0; i < stars.length; i++) { const s = stars[order[i]]; if (i < n) { s.mode = 'text'; s.tx = points[i].x; s.ty = points[i].y; } else { s.mode = 'ambient'; } }
+    starMotionMode = 'settle';
+  }
+  function triggerTextSparkle() {
+    stars.forEach((s) => {
+      if (s.mode === 'text' && Math.random() < 0.5) {
+        setTimeout(() => { s.brightBoost = 1.4; }, Math.random() * 1800);
+        setTimeout(() => { s.brightBoost = 0; }, 1800 + Math.random() * 1200);
+      }
+    });
+  }
+  function beginTextDissolve() {
+    stars.forEach((s) => { if (s.mode === 'text') { s.mode = 'ambient'; s.vx = (Math.random() - 0.5) * 1.2; s.vy = (Math.random() - 0.5) * 1.2; } });
+    starMotionMode = 'settle-ambient';
+  }
+  function beginConstellationForm() {
+    if (!constellationPoints.length) buildConstellationPoints();
+    const n = Math.min(constellationPoints.length, stars.length);
+    const order = [...Array(stars.length).keys()];
+    for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+    for (let i = 0; i < n; i++) { const s = stars[order[i]]; s.mode = 'constellation'; s.constIdx = i; s.tx = constellationPoints[i].x; s.ty = constellationPoints[i].y; }
+  }
+  let constellationRotation = 0;
+  let lastFrameTime = performance.now();
+  function update(dt, elapsed) {
+    zoomFactor += (zoomTarget - zoomFactor) * Math.min(1, dt * 1.5);
+    const sceneNow = sceneIndexForTime(elapsed) + 1;
+    if (sceneNow === 6) constellationRotation += dt * 0.06;
+    maybeSpawnShootingStar(elapsed); updateShootingStars(dt);
+    const cx = state.width / 2, cy = state.height / 2;
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i];
+      if (s.mode === 'text' || s.mode === 'constellation') {
+        let targetX = s.tx, targetY = s.ty;
+        if (s.mode === 'constellation') {
+          const ccx = state.width / 2, ccy = state.height * 0.46;
+          const dx0 = s.tx - ccx, dy0 = s.ty - ccy;
+          const cosA = Math.cos(constellationRotation), sinA = Math.sin(constellationRotation);
+          targetX = ccx + dx0 * cosA - dy0 * sinA; targetY = ccy + dx0 * sinA + dy0 * cosA;
+        }
+        s.cx += (targetX - s.cx) * Math.min(1, dt * 2.2); s.cy += (targetY - s.cy) * Math.min(1, dt * 2.2);
+        s.x = s.cx; s.y = s.cy;
+      } else {
+        if (starMotionMode === 'chaos') {
+          const dx = s.x - cx, dy = s.y - cy; const dist = Math.max(40, Math.hypot(dx, dy)); const swirl = 0.0009;
+          s.vx += (-dy / dist) * swirl * dt * 60; s.vy += (dx / dist) * swirl * dt * 60;
+          s.vx += (Math.random() - 0.5) * 0.02; s.vy += (Math.random() - 0.5) * 0.02;
+          const speed = Math.hypot(s.vx, s.vy); const maxSpeed = 1.6;
+          if (speed > maxSpeed) { s.vx = (s.vx / speed) * maxSpeed; s.vy = (s.vy / speed) * maxSpeed; }
+        } else { s.vx *= 0.995; s.vy *= 0.995; }
+        s.x += s.vx * dt * 60 * (0.4 + s.z * 0.8); s.y += s.vy * dt * 60 * (0.4 + s.z * 0.8);
+        if (s.x < -10) s.x = state.width + 10; if (s.x > state.width + 10) s.x = -10;
+        if (s.y < -10) s.y = state.height + 10; if (s.y > state.height + 10) s.y = -10;
+        s.cx = s.x; s.cy = s.y;
+      }
+      s.twinklePhase += dt * s.twinkleSpeed;
+      if (s.brightBoost > 0) s.brightBoost *= (1 - Math.min(1, dt * 1.2));
+    }
+  }
+  function draw(elapsed) {
+    ctx.save(); ctx.clearRect(0, 0, state.width, state.height);
+    const bgGrad = ctx.createRadialGradient(state.width / 2, state.height / 2, 0, state.width / 2, state.height / 2, Math.max(state.width, state.height) * 0.75);
+    bgGrad.addColorStop(0, '#070a16'); bgGrad.addColorStop(1, '#020208');
+    ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, state.width, state.height);
+    let revealAlpha = 1;
+    if (elapsed < 2.5) revealAlpha = Math.max(0, elapsed / 2.5);
+    ctx.translate(state.width / 2, state.height / 2); ctx.scale(zoomFactor, zoomFactor); ctx.translate(-state.width / 2, -state.height / 2);
+    const anyConstellation = stars.length && stars.some(s => s.mode === 'constellation');
+    if (anyConstellation) {
+      ctx.save(); ctx.strokeStyle = 'rgba(255, 233, 184, 0.18)'; ctx.lineWidth = 1;
+      const ccx = state.width / 2, ccy = state.height * 0.46;
+      const cosA = Math.cos(constellationRotation), sinA = Math.sin(constellationRotation);
+      const rp = constellationPoints.map(p => { const dx0 = p.x - ccx, dy0 = p.y - ccy; return { x: ccx + dx0 * cosA - dy0 * sinA, y: ccy + dx0 * sinA + dy0 * cosA }; });
+      constellationEdges.forEach(([a, b]) => { if (rp[a] && rp[b]) { ctx.beginPath(); ctx.moveTo(rp[a].x, rp[a].y); ctx.lineTo(rp[b].x, rp[b].y); ctx.stroke(); } });
+      ctx.restore();
+    }
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i]; const twinkle = 0.55 + 0.45 * Math.sin(s.twinklePhase);
+      let alpha = (0.35 + twinkle * 0.65) * revealAlpha; let radius = s.baseRadius;
+      if (s.mode === 'text') { alpha = Math.min(1, alpha + 0.35); radius = s.baseRadius * 1.15; }
+      else if (s.mode === 'constellation') { alpha = Math.min(1, alpha + 0.3); radius = s.baseRadius * 1.3; }
+      if (i === herStarIndex) { radius = s.baseRadius * 3.2; alpha = 1; }
+      if (s.brightBoost > 0) { radius += s.brightBoost * 1.5; alpha = Math.min(1, alpha + s.brightBoost * 0.4); }
+      ctx.beginPath(); ctx.fillStyle = s.colorString(alpha); ctx.arc(s.x, s.y, Math.max(0.2, radius), 0, Math.PI * 2); ctx.fill();
+      if (i === herStarIndex || s.mode === 'text' || s.brightBoost > 0.1) {
+        ctx.beginPath(); ctx.fillStyle = s.colorString(alpha * 0.18); ctx.arc(s.x, s.y, radius * 3, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    if (rippleActive) {
+      const age = elapsed - rippleActive.startTime; const maxAge = 2.2;
+      if (age >= 0 && age < maxAge) {
+        const p = age / maxAge; const r = p * Math.max(state.width, state.height) * 0.8;
+        ctx.beginPath(); ctx.strokeStyle = `rgba(255, 224, 170, ${(1 - p) * 0.35})`; ctx.lineWidth = 2;
+        ctx.arc(rippleActive.x, rippleActive.y, r, 0, Math.PI * 2); ctx.stroke();
+      } else if (age >= maxAge) { rippleActive = null; }
+    }
+    drawShootingStars(); ctx.restore();
+    if (elapsed < 2.5) { ctx.fillStyle = `rgba(2,3,10,${1 - revealAlpha})`; ctx.fillRect(0, 0, state.width, state.height); }
+  }
+  function loop(now) {
+    const dt = Math.min(0.05, (now - lastFrameTime) / 1000); lastFrameTime = now;
+    if (state.playing) {
+      state.elapsed = (now - state.startTime) / 1000;
+      if (state.elapsed >= TOTAL_DURATION) { state.elapsed = TOTAL_DURATION; state.playing = false; }
+      const idx = sceneIndexForTime(state.elapsed);
+      if (idx !== state.lastSceneRendered) { state.lastSceneRendered = idx; state.currentScene = idx; setActiveDot(SCENES[idx].id); SCENE_ENTER_FNS[SCENES[idx].id](); }
+    }
+    update(dt, state.elapsed); draw(state.elapsed); requestAnimationFrame(loop);
+  }
+  let audioCtx = null; let audioNodes = null; let audioOn = false;
+  function initAudio() {
+    if (audioCtx) return;
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    audioCtx = new AC();
+    const master = audioCtx.createGain(); master.gain.value = 0; master.connect(audioCtx.destination);
+    const padGain = audioCtx.createGain(); padGain.gain.value = 0.18;
+    const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 900; filter.Q.value = 0.4;
+    const baseFreqs = [110, 165, 220];
+    baseFreqs.map((f, idx) => {
+      const o = audioCtx.createOscillator(); o.type = 'sine'; o.frequency.value = f; o.detune.value = (idx - 1) * 6;
+      const g = audioCtx.createGain(); g.gain.value = 0.5 / baseFreqs.length; o.connect(g); g.connect(filter); o.start(); return o;
+    });
+    filter.connect(padGain); padGain.connect(master);
+    const lfo = audioCtx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.05;
+    const lfoGain = audioCtx.createGain(); lfoGain.gain.value = 250; lfo.connect(lfoGain); lfoGain.connect(filter.frequency); lfo.start();
+    const bufferSize = 2 * audioCtx.sampleRate; const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = noiseBuffer.getChannelData(0); for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.5;
+    const noise = audioCtx.createBufferSource(); noise.buffer = noiseBuffer; noise.loop = true;
+    const noiseFilter = audioCtx.createBiquadFilter(); noiseFilter.type = 'lowpass'; noiseFilter.frequency.value = 400;
+    const noiseGain = audioCtx.createGain(); noiseGain.gain.value = 0.025;
+    noise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(master); noise.start();
+    audioNodes = { master };
+    const now = audioCtx.currentTime;
+    master.gain.cancelScheduledValues(now); master.gain.setValueAtTime(0, now); master.gain.linearRampToValueAtTime(0.5, now + 3);
+  }
+  function setAudioEnabled(on) {
+    audioOn = on; soundToggle.textContent = on ? '♪' : '✕';
+    if (!audioCtx) { if (on) initAudio(); return; }
+    const now = audioCtx.currentTime;
+    audioNodes.master.gain.cancelScheduledValues(now); audioNodes.master.gain.setValueAtTime(audioNodes.master.gain.value, now);
+    audioNodes.master.gain.linearRampToValueAtTime(on ? 0.5 : 0, now + 0.8);
+    if (audioCtx.state === 'suspended' && on) audioCtx.resume();
+  }
+  soundToggle.addEventListener('click', () => setAudioEnabled(!audioOn));
+  function playShimmer() {
+    if (!audioCtx || !audioOn) return;
+    const now = audioCtx.currentTime; const notes = [880, 1108, 1318];
+    notes.forEach((f, i) => {
+      const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      o.type = 'sine'; o.frequency.value = f; g.gain.value = 0; o.connect(g); g.connect(audioNodes.master);
+      const t0 = now + i * 0.12;
+      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.06, t0 + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.4);
+      o.start(t0); o.stop(t0 + 1.5);
+    });
+  }
+  function startExperience() {
+    if (state.started) return; state.started = true;
+    startScreen.classList.add('hidden'); uiChrome.classList.add('visible');
+    sceneDots.classList.add('visible'); soundToggle.classList.add('visible');
+    initAudio(); setAudioEnabled(true);
+    state.playing = true; state.startTime = performance.now(); state.elapsed = 0; state.lastSceneRendered = -1;
+    blackout.classList.remove('on');
+  }
+  function restartExperience() {
+    clearTextLayer(); blackout.classList.remove('on'); herStarIndex = -1; rippleActive = null;
+    zoomFactor = 1; zoomTarget = 1; starMotionMode = 'calm'; constellationRotation = 0; shootingStars = [];
+    initStars(); state.lastSceneRendered = -1; state.elapsed = 0; state.startTime = performance.now(); state.playing = true;
+  }
+  function skipToNextScene() {
+    if (!state.playing && state.elapsed >= TOTAL_DURATION) return;
+    const idx = sceneIndexForTime(state.elapsed); const nextIdx = Math.min(SCENES.length - 1, idx + 1);
+    const nextStart = (nextIdx === idx) ? TOTAL_DURATION : SCENES[nextIdx].start;
+    state.elapsed = Math.min(TOTAL_DURATION, nextStart + 0.05);
+    state.startTime = performance.now() - state.elapsed * 1000; state.lastSceneRendered = -1;
+    if (state.elapsed >= TOTAL_DURATION) { state.playing = false; blackout.classList.add('on'); } else { state.playing = true; }
+  }
+  startScreen.addEventListener('click', startExperience);
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') { e.preventDefault(); if (!state.started) { startExperience(); return; } skipToNextScene(); }
+    else if (e.key === 'r' || e.key === 'R') { if (state.started) restartExperience(); }
+  });
+  const _triggerTextSparkle = triggerTextSparkle;
+  triggerTextSparkle = function () { _triggerTextSparkle(); playShimmer(); };
+  const _beginTextAssembly = beginTextAssembly;
+  beginTextAssembly = function () { _beginTextAssembly(); playShimmer(); };
+  resize(); initStars(); requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
